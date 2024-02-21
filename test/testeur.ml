@@ -24,6 +24,36 @@ open Tp1
 *)
 (******************************************************************************)
 
+(* Ajoutés par rapport à version 1 du testeur
+   Définition de programmes fictifs
+*)
+let p1 : programme =
+  ( (Bacc, "XYZ", 15, 1),
+    "XYZ",
+    [],
+    ( 9,
+      [
+        ("OB", CoursOB (6, [ "IFT-1003"; "STT-1000" ]));
+        ("R1", PlageCr (3, 3, Cours [ "GLO-2100"; "IFT-2008" ]));
+      ] ),
+    ( 6,
+      [
+        ("R2", PlageCr (3, 3, Cours [ "GLO-2100"; "IFT-2008" ]));
+        ("R3", PlageCr (3, 3, CoursExclus [ "*-IFT" ]));
+      ] ),
+    [] )
+
+and p_mp : programme =
+  ( (MP, "MicroPgm", 6, 0),
+    "Fictif",
+    [],
+    (3, [ ("R1", CoursOB (3, [ "IFT-1004" ])) ]),
+    (3, [ ("R2", PlageCr (3, 3, Cours [ "GIF-1003" ])) ]),
+    [] )
+
+and p_vide : programme =
+  ((Bacc, "Fictif", 0, 0), "Vide", [], (0, []), (0, []), [])
+
 (* -------------------------------------------------------------------------- *)
 let jeu_est_prerequis =
   let est_prerequis' = est_prerequis bcours in
@@ -45,11 +75,26 @@ let jeu_est_prerequis =
       ( ("GIF-1001", "IFT-1004"),
         1,
         {| est_prerequis bcours "GIF-1001" "IFT-1004" |} );
+      (* Ajoutés par rapport à version 1 du testeur *)
+      ( ("IFT-1004", "IFT-1004"),
+        0,
+        {| est_prerequis bcours "IFT-1004" "IFT-1004" |} );
+      ( ("IFT-1903", "MAT-2910"),
+        -1,
+        {| est_prerequis bcours "IFT-1903" "MAT-2910" |} );
+      ( ("MAT-2910", "IFT-1903"),
+        1,
+        {| est_prerequis bcours "MAT-2910" "IFT-1903" |} );
     ],
     (* ---- Cas devant soulever une exception! ---- *)
     Some
       ( (fun (nc1, nc2) -> est_prerequis' nc1 nc2),
-        [ (("IFT-2008", "a"), {|est_prerequis bcours "IFT-2008" "a"|}) ] ) )
+        [
+          (("IFT-2008", "a"), {|est_prerequis bcours "IFT-2008" "a"|});
+          (* Ajoutés par rapport à version 1 du testeur *)
+          (("a", "IFT-2008"), {|est_prerequis bcours "a" "IFT-2008"|});
+          (("", ""), {|est_prerequis bcours "" ""|});
+        ] ) )
 
 (* -------------------------------------------------------------------------- *)
 let jeu_simp_pre =
@@ -58,15 +103,17 @@ let jeu_simp_pre =
     [
       ( OU [ CP "a"; OU [ CP "b"; CP "a" ] ],
         OU [ CP "a"; CP "b" ],
-        {|prerequis bcours "IFT-1004"|} );
-      (OU [ CP "a"; CP "a" ], CP "a", {|prerequis bcours "GIF-1003"|});
+        {|simp_pre (OU [ CP "a"; OU [ CP "b"; CP "a" ] ])|} );
+      (OU [ CP "a"; CP "a" ], CP "a", {|sim_pre OU [ CP "a"; CP "a" ] ]|});
       ( OU [ CP "a"; CCP "a" ],
         OU [ CP "a"; CCP "a" ],
-        {|prerequis bcours "IFT-2008"|} );
+        {|simp_pre (OU [ CP "a"; CCP "a" ])|} );
       ( ET [ CRE 12; CRE 24; CRE 12 ],
         ET [ CRE 12; CRE 24 ],
-        {|prerequis bcours "IFT-4100"|} );
-      (OU [ Aucun; OU [ Aucun ]; Aucun ], Aucun, {|prerequis bcours "STT-4000"|});
+        {|simp_pre (ET [ CRE 12; CRE 24; CRE 12 ])|} );
+      ( OU [ Aucun; OU [ Aucun ]; Aucun ],
+        Aucun,
+        {|simp_pre (OU [ Aucun; OU [ Aucun ]; Aucun ])|} );
       ( ET
           [
             CP "a";
@@ -74,10 +121,54 @@ let jeu_simp_pre =
             ET [ Aucun; CP "a"; CP "d" ];
           ],
         ET [ CP "a"; OU [ CP "b"; ET [ CP "a"; CP "c" ] ]; CP "d" ],
-        {|prerequis bcours "STT-4000"|} );
+        {|simp_pre (ET
+        [
+          CP "a";
+          OU [ CP "b"; ET [ CP "a"; CP "c" ]; CP "b"; Aucun ];
+          ET [ Aucun; CP "a"; CP "d" ];
+        ]) ]|}
+      );
       ( ET [ CP "a"; OU [ CP "b" ] ],
         ET [ CP "a"; CP "b" ],
-        {|prerequis bcours "STT-4000"|} );
+        {|simp_pre (ET [ CP "a"; OU [ CP "b" ] ])|} );
+      (* Ajoutés par rapport à version 1 du testeur *)
+      (Aucun, Aucun, {|simp_pre Aucun|});
+      (CP "a", CP "a", {|simp_pre (CP "a")|});
+      (CCP "a", CCP "a", {|simp_pre (CCP "a")|});
+      (CRE 12, CRE 12, {|simp_pre (CRE 12)|});
+      ( OU [ CP "a"; CCP "a"; CRE 12 ],
+        OU [ CP "a"; CCP "a"; CRE 12 ],
+        {|simp_pre (OU [CP "a"; CCP "a"; CRE 12])|} );
+      ( ET [ CP "a"; CCP "a"; CRE 12 ],
+        ET [ CP "a"; CCP "a"; CRE 12 ],
+        {|simp_pre (ET [CP "a"; CCP "a"; CRE 12])|} );
+      ( OU [ Aucun; OU [ Aucun ]; Aucun ],
+        Aucun,
+        {|simp_pre (OU [ Aucun; OU [ Aucun ]; Aucun ])|} );
+      (OU [], Aucun, {|simp_pre (OU [])|});
+      (ET [], Aucun, {|simp_pre (ET [])|});
+      ( OU
+          [
+            CRE 12;
+            OU [ CP "a"; CRE 12 ];
+            CP "a";
+            OU [ OU [ CRE 12 ]; OU [ CP "a" ] ];
+          ],
+        OU [ CRE 12; CP "a" ],
+        {|simp_pre (OU[CRE 12; OU [CP "a"; CRE 12]; CP "a"; OU [OU[CRE 12]; 
+          OU[CP "a"]]])|}
+      );
+      ( ET
+          [
+            CRE 12;
+            ET [ CP "a"; CRE 12 ];
+            CP "a";
+            ET [ ET [ CRE 12 ]; ET [ CP "a" ] ];
+          ],
+        ET [ CRE 12; CP "a" ],
+        {|simp_pre (ET[CRE 12; ET [CP "a"; CRE 12]; CP "a"; ET [ET[CRE 12]; 
+          ET[CP "a"]]])|}
+      );
     ],
     (* ---- Cas devant soulever une exception! ---- *)
     None )
@@ -106,6 +197,221 @@ let jeu_seuls_cours_pgm_dans_pre =
         CCP "b",
         {|seuls_cours_pgm_dans_pre ["a"; "b"; "c"; "d"] 
         (ET [CCP "b"; OU [CCP "b"; CP "e"]; OU [CP "e"; CP "f"]])|}
+      );
+      (* Ajoutés par rapport à version 1 du testeur *)
+      ( ( [
+            "GIF-1001";
+            "IFT-1004";
+            "IFT-1111";
+            "MAT-1200";
+            "MAT-1919";
+            "IFT-1000";
+            "IFT-1003";
+            "STT-1000";
+            "IFT-2002";
+            "IFT-3000";
+            "IFT-3001";
+            "IFT-3101";
+            "IFT-2580";
+            "IFT-3580";
+            "GIF-1003";
+            "IFT-1006";
+            "GLO-2000";
+            "IFT-2006";
+            "GLO-2001";
+            "IFT-2001";
+            "GLO-2100";
+            "IFT-2008";
+            "GLO-2004";
+            "IFT-2007";
+            "IFT-2004";
+            "GLO-2005";
+          ],
+          OU
+            [
+              CP "MQT-1102";
+              CP "MQT-1100";
+              CP "STT-2920";
+              CP "MAT-1915";
+              CP "STT-1900";
+              CP "STT-1000";
+            ] ),
+        CP "STT-1000",
+        {|seuls_cours_pgm_dans_pre ["GIF-1001"; "IFT-1004"; "IFT-1111"; "MAT-1200"; "MAT-1919"; "IFT-1000";
+        "IFT-1003"; "STT-1000"; "IFT-2002"; "IFT-3000"; "IFT-3001"; "IFT-3101";
+        "IFT-2580"; "IFT-3580"; "GIF-1003"; "IFT-1006"; "GLO-2000"; "IFT-2006";
+        "GLO-2001"; "IFT-2001"; "GLO-2100"; "IFT-2008"; "GLO-2004"; "IFT-2007";
+        "IFT-2004"; "GLO-2005"] (OU
+        [CP "MQT-1102"; CP "MQT-1100"; CP "STT-2920"; CP "MAT-1915"; CP "STT-1900";
+         CP "STT-1000"])|}
+      );
+      ( ( [
+            "GLO-2004";
+            "IFT-1003";
+            "IFT-1700";
+            "IFT-2001";
+            "IFT-2004";
+            "IFT-2006";
+            "IFT-2007";
+            "IFT-2103";
+            "IFT-3000";
+            "IFT-3002";
+            "IFT-3100";
+          ],
+          ET
+            [
+              OU [ CP "GIF-1003"; CP "IFT-1006" ];
+              OU [ CP "IFT-2008"; CP "GLO-2100" ];
+            ] ),
+        Aucun,
+        {|seuls_cours_pgm_dans_pre ["GLO-2004"; "IFT-1003"; "IFT-1700"; "IFT-2001"; "IFT-2004"; "IFT-2006";
+        "IFT-2007"; "IFT-2103"; "IFT-3000"; "IFT-3002"; "IFT-3100"] (ET
+                   [
+                     OU [ CP "GIF-1003"; CP "IFT-1006" ];
+                     OU [ CP "IFT-2008"; CP "GLO-2100" ];
+                   ])|}
+      );
+      ( ( [
+            "GIF-1001";
+            "IFT-1004";
+            "GIF-1003";
+            "IFT-1006";
+            "GLO-2100";
+            "IFT-2008";
+          ],
+          ET
+            [
+              OU [ CP "GIF-1003"; CP "IFT-1006" ];
+              OU [ CP "IFT-2008"; CP "GLO-2100" ];
+            ] ),
+        ET
+          [
+            OU [ CP "GIF-1003"; CP "IFT-1006" ];
+            OU [ CP "IFT-2008"; CP "GLO-2100" ];
+          ],
+        {|seuls_cours_pgm_dans_pre ["GIF-1001"; "IFT-1004"; "GIF-1003"; "IFT-1006"; "GLO-2100"; "IFT-2008"] (ET
+        [
+          OU [ CP "GIF-1003"; CP "IFT-1006" ];
+          OU [ CP "IFT-2008"; CP "GLO-2100" ];
+        ])|}
+      );
+      ( ( [
+            "GIF-1002";
+            "GLO-1111";
+            "GLO-1901";
+            "MAT-1900";
+            "MAT-1919";
+            "GEL-1001";
+            "GIF-1001";
+            "GIF-1003";
+            "MAT-1910";
+            "GLO-2000";
+            "GLO-2004";
+            "GLO-2100";
+            "GLO-3101";
+            "STT-2920";
+            "ECN-2901";
+            "GLO-2001";
+            "GLO-2003";
+            "GLO-2005";
+            "GLO-3102";
+            "GLO-4000";
+            "GLO-4002";
+            "IFT-3001";
+            "MAT-2930";
+            "GEL-4799";
+            "GLO-3013";
+            "GMN-2901";
+            "IFT-2002";
+            "GLO-3004";
+            "GLO-4003";
+            "PHI-2910";
+            "PHI-3900";
+            "GLO-3002";
+            "MAT-2910";
+            "GLO-2580";
+            "GLO-2581";
+            "GLO-3100";
+            "GLO-3202";
+          ],
+          ET
+            [
+              OU [ CP "IFT-2008"; CP "GLO-2100" ];
+              OU [ CP "STT-1000"; CP "STT-2920"; CP "STT-2000"; CP "MQT-1102" ];
+              OU [ CP "MAT-1310"; CP "MAT-1919" ];
+            ] ),
+        ET [ CP "GLO-2100"; CP "STT-2920"; CP "MAT-1919" ],
+        {|seuls_cours_pgm_dans_pre ["GIF-1002"; "GLO-1111"; "GLO-1901"; "MAT-1900"; "MAT-1919"; "GEL-1001";
+        "GIF-1001"; "GIF-1003"; "MAT-1910"; "GLO-2000"; "GLO-2004"; "GLO-2100";
+        "GLO-3101"; "STT-2920"; "ECN-2901"; "GLO-2001"; "GLO-2003"; "GLO-2005";
+        "GLO-3102"; "GLO-4000"; "GLO-4002"; "IFT-3001"; "MAT-2930"; "GEL-4799";
+        "GLO-3013"; "GMN-2901"; "IFT-2002"; "GLO-3004"; "GLO-4003"; "PHI-2910";
+        "PHI-3900"; "GLO-3002"; "MAT-2910"; "GLO-2580"; "GLO-2581"; "GLO-3100";
+        "GLO-3202"] (ET
+                   [
+                     OU [ CP "IFT-2008"; CP "GLO-2100" ];
+                     OU [ CP "STT-1000"; CP "STT-2920"; CP "STT-2000"; 
+                          CP "MQT-1102" ];
+                     OU [ CP "MAT-1310"; CP "MAT-1919" ];
+                   ])|}
+      );
+      ( ( [ "GIF-1001"; "IFT-1004"; "GIF-1003"; "IFT-1006"; "IFT-2008" ],
+          ET
+            [
+              OU [ CP "GLO-2100"; CP "IFT-2008" ];
+              OU [ CP "MAT-1200"; CP "MAT-2930"; CP "PHY-1001" ];
+              OU [ CCP "IFT-4102"; CCP "GIF-4101" ];
+            ] ),
+        CP "IFT-2008",
+        {|seuls_cours_pgm_dans_pre [] Aucun|} );
+      (([ "a" ], Aucun), Aucun, {|seuls_cours_pgm_dans_pre ["a"] Aucun|});
+      (([ "a" ], CRE 12), CRE 12, {|seuls_cours_pgm_dans_pre ["a"] (CRE 12)|});
+      (([ "a" ], CP "a"), CP "a", {|seuls_cours_pgm_dans_pre ["a"] (CP "a")|});
+      (([ "a" ], CCP "a"), CCP "a", {|seuls_cours_pgm_dans_pre ["a"] (CCP "a")|});
+      ( ([ "a" ], OU [ CCP "a" ]),
+        CCP "a",
+        {|seuls_cours_pgm_dans_pre ["a"] (OU[CCP "a"])|} );
+      ( ([ "a" ], ET [ CCP "a" ]),
+        CCP "a",
+        {|seuls_cours_pgm_dans_pre ["a"] (ET[CCP "a"])|} );
+      (([ "b" ], CP "a"), Aucun, {|seuls_cours_pgm_dans_pre ["b"] (CP "a")|});
+      (([ "b" ], CCP "a"), Aucun, {|seuls_cours_pgm_dans_pre ["b"] (CCP "a")|});
+      ( ([ "b" ], OU [ CCP "a" ]),
+        Aucun,
+        {|seuls_cours_pgm_dans_pre ["b"] (OU[CCP "a"])|} );
+      ( ([ "b" ], ET [ CCP "a" ]),
+        Aucun,
+        {|seuls_cours_pgm_dans_pre ["b"] (ET[CCP "a"])|} );
+      ( ( [],
+          ET [ ET [ Aucun; Aucun ]; Aucun; ET [ ET [ Aucun ]; ET [ Aucun ] ] ]
+        ),
+        Aucun,
+        {|seuls_cours_pgm_dans_pre [] (ET[ET [Aucun; Aucun]; Aucun; ET 
+          [ET[Aucun]; ET[Aucun]]])|}
+      );
+      ( ( [],
+          ET
+            [
+              CRE 12;
+              ET [ CP "a"; CRE 12 ];
+              CP "a";
+              ET [ ET [ CRE 12 ]; ET [ CP "a" ] ];
+            ] ),
+        CRE 12,
+        {|seuls_cours_pgm_dans_pre [] (ET[CRE 12; ET [CP "a"; CRE 12]; CP "a"; 
+          ET [ET[CRE 12]; ET[CP "a"]]])|}
+      );
+      ( ( [ "a" ],
+          ET
+            [
+              CRE 12;
+              ET [ CP "a"; CRE 12 ];
+              CP "a";
+              ET [ ET [ CRE 12 ]; ET [ CP "a" ] ];
+            ] ),
+        ET [ CRE 12; CP "a" ],
+        {|seuls_cours_pgm_dans_pre ["a"] (ET[CRE 12; ET [CP "a"; CRE 12]; CP "a"; 
+          ET [ET[CRE 12]; ET[CP "a"]]])|}
       );
     ],
     (* ---- Cas devant soulever une exception! ---- *)
@@ -211,6 +517,169 @@ let jeu_cours_pgm_par_type =
         {|cours_pgm_par_type mp_base OP|} );
       ((mp_base, Conc), [], {|cours_pgm_par_type mp_base Conc|});
       ((mp_jv, OP), [], {|cours_pgm_par_type mp_jv OP|});
+      (* Ajoutés par rapport à version 1 du testeur *)
+      ( (b_ift, OB),
+        [
+          "GIF-1001";
+          "IFT-1004";
+          "IFT-1111";
+          "MAT-1200";
+          "MAT-1919";
+          "IFT-1000";
+          "IFT-1003";
+          "STT-1000";
+          "IFT-2002";
+          "IFT-3000";
+          "IFT-3001";
+          "IFT-3101";
+          "IFT-2580";
+          "IFT-3580";
+          "GIF-1003";
+          "IFT-1006";
+          "GLO-2000";
+          "IFT-2006";
+          "GLO-2001";
+          "IFT-2001";
+          "GLO-2100";
+          "IFT-2008";
+          "GLO-2004";
+          "IFT-2007";
+          "IFT-2004";
+          "GLO-2005";
+        ],
+        {|cours_pgm_par_type b_ift OB|} );
+      ( (b_ift, OP),
+        [
+          "ANL-2020";
+          "ANL-3020";
+          "BIF-4007";
+          "GIF-3101";
+          "GIF-4100";
+          "GIF-4101";
+          "GIF-4104";
+          "GIF-4105";
+          "GLO-2003";
+          "GLO-3100";
+          "GLO-3101";
+          "GLO-3102";
+          "GLO-3112";
+          "GLO-3202";
+          "GLO-4000";
+          "GLO-4001";
+          "GLO-4003";
+          "GLO-4008";
+          "GLO-4009";
+          "GLO-4010";
+          "GLO-4027";
+          "GLO-4030";
+          "GLO-4035";
+          "IFT-2101";
+          "IFT-2102";
+          "IFT-2103";
+          "IFT-3002";
+          "IFT-3100";
+          "IFT-3113";
+          "IFT-4001";
+          "IFT-4003";
+          "IFT-4021";
+          "IFT-4022";
+          "IFT-4029";
+          "IFT-4030";
+          "IFT-4100";
+          "IFT-4201";
+          "SIO-2100";
+          "SIO-2102";
+          "SIO-2104";
+          "SIO-2105";
+          "SIO-2107";
+          "GLO-3004";
+          "GLO-4002";
+          "IFT-3201";
+          "IFT-2003";
+          "IFT-4102";
+        ],
+        {|cours_pgm_par_type b_ift OP|} );
+      ( (b_ift, Conc),
+        [
+          "IFT-4001";
+          "IFT-4102";
+          "BCM-1001";
+          "BCM-1003";
+          "BCM-1005";
+          "BIF-1000";
+          "BIF-1001";
+          "BIF-4007";
+          "GIF-4104";
+          "GLO-2003";
+          "GLO-3004";
+          "GLO-3100";
+          "GLO-3101";
+          "GLO-3102";
+          "GLO-3112";
+          "GLO-4000";
+          "GLO-4002";
+          "GLO-4003";
+          "GLO-4008";
+          "GLO-4035";
+          "IFT-3201";
+          "GLO-3102";
+          "GIF-3101";
+          "GLO-3100";
+          "GLO-3112";
+          "GLO-4000";
+          "GLO-4002";
+          "IFT-2101";
+          "IFT-3201";
+          "GIF-3101";
+          "GIF-4100";
+          "GIF-4104";
+          "GIF-4105";
+          "GLO-4000";
+          "IFT-2103";
+          "IFT-3100";
+          "IFT-3113";
+          "IFT-4102";
+          "PHY-1903";
+          "GLO-3100";
+          "GLO-3202";
+          "IFT-2102";
+          "IFT-3002";
+          "IFT-3201";
+          "SIO-2102";
+          "GLO-3101";
+          "GLO-4035";
+          "IFT-4001";
+          "SIO-2102";
+          "SIO-2104";
+          "GIF-4100";
+          "GIF-4101";
+          "GLO-4001";
+          "GLO-4030";
+          "IFT-2003";
+          "IFT-3100";
+          "IFT-4001";
+          "IFT-4022";
+          "IFT-4030";
+          "IFT-4102";
+          "GLO-4027";
+          "GLO-4035";
+          "GIF-4101";
+          "GIF-4104";
+          "GLO-4030";
+          "IFT-4001";
+          "IFT-4102";
+          "STT-2200";
+        ],
+        {|cours_pgm_par_type b_ift Conc|} );
+      ( (p1, OB),
+        [ "IFT-1003"; "STT-1000"; "GLO-2100"; "IFT-2008" ],
+        {|cours_pgm_par_type p1 OB|} );
+      ((p1, OP), [ "GLO-2100"; "IFT-2008" ], {|cours_pgm_par_type p1 OP|});
+      ((p1, Conc), [], {|cours_pgm_par_type p1 Conc|});
+      ((p_mp, OB), [ "IFT-1004" ], {|cours_pgm_par_type p_mp OB|});
+      ((p_mp, OP), [ "GIF-1003" ], {|cours_pgm_par_type p_mp OP|});
+      ((p_vide, OB), [], {|cours_pgm_par_type p_vide OB|});
+      ((p_vide, OP), [], {|cours_pgm_par_type p_vide OP|});
     ],
     (* ---- Cas devant soulever une exception! ---- *)
     None )
@@ -361,6 +830,176 @@ let jeu_cours_pgm =
           "IFT-2004";
         ],
         {|cours_pgm c_ift|} );
+      (* Ajoutés par rapport à version 1 du testeur *)
+      ( b_glo,
+        [
+          "GIF-1002";
+          "GLO-1111";
+          "GLO-1901";
+          "MAT-1900";
+          "MAT-1919";
+          "GEL-1001";
+          "GIF-1001";
+          "GIF-1003";
+          "MAT-1910";
+          "GLO-2000";
+          "GLO-2004";
+          "GLO-2100";
+          "GLO-3101";
+          "STT-2920";
+          "ECN-2901";
+          "GLO-2001";
+          "GLO-2003";
+          "GLO-2005";
+          "GLO-3102";
+          "GLO-4000";
+          "GLO-4002";
+          "IFT-3001";
+          "MAT-2930";
+          "GEL-4799";
+          "GLO-3013";
+          "GMN-2901";
+          "IFT-2002";
+          "GLO-3004";
+          "GLO-4003";
+          "PHI-2910";
+          "PHI-3900";
+          "GLO-3002";
+          "MAT-2910";
+          "GLO-2580";
+          "GLO-2581";
+          "GLO-3100";
+          "GLO-3202";
+          "ANL-2020";
+          "ANL-3020";
+          "BIF-4007";
+          "GEL-1000";
+          "GIF-3000";
+          "GIF-3004";
+          "GIF-3101";
+          "GIF-4100";
+          "GIF-4101";
+          "GIF-4104";
+          "GIF-4105";
+          "GLO-3112";
+          "GLO-4001";
+          "GLO-4007";
+          "GLO-4008";
+          "GLO-4009";
+          "GLO-4010";
+          "GLO-4027";
+          "GLO-4030";
+          "GLO-4035";
+          "IFT-2102";
+          "IFT-2103";
+          "IFT-3000";
+          "IFT-3002";
+          "IFT-3100";
+          "IFT-3101";
+          "IFT-3113";
+          "IFT-3201";
+          "IFT-4001";
+          "IFT-4003";
+          "IFT-4021";
+          "IFT-4022";
+          "IFT-4029";
+          "IFT-4030";
+          "IFT-4102";
+          "IFT-4201";
+          "MAT-2200";
+          "STT-2200";
+          "MAT-1200";
+          "ANL-3905";
+          "DDU-1000";
+          "EDC-4000";
+          "ENT-1000";
+          "GSF-1020";
+          "GSO-1000";
+          "MRK-1000";
+          "PHI-1900";
+          "RLT-1000";
+          "RLT-1700";
+          "BCM-1001";
+          "BCM-1003";
+          "BIO-1910";
+          "BIO-2003";
+          "BIO-4900";
+          "BIO-4902";
+          "CHM-1000";
+          "CHM-1003";
+          "CHM-1905";
+          "GGR-2305";
+          "GMC-1003";
+          "MCB-1000";
+          "PHY-1000";
+          "PHY-1003";
+          "PHY-1006";
+          "PHY-1007";
+          "PHY-2100";
+          "SBM-1004";
+        ],
+        {|cours_pgm b_glo|} );
+      ( b_iig,
+        [
+          "GIF-1001";
+          "IFT-1004";
+          "MNG-1000";
+          "MQT-1102";
+          "SIO-2103";
+          "CTB-1000";
+          "SIO-2100";
+          "SIO-2105";
+          "GSO-1000";
+          "SIO-2104";
+          "SIO-3100";
+          "GSF-1000";
+          "SIO-2107";
+          "GLO-4000";
+          "MRK-1000";
+          "GLO-2003";
+          "GLO-4002";
+          "SIO-2102";
+          "SIO-3110";
+          "IFT-2580";
+          "GIF-1003";
+          "IFT-1006";
+          "GLO-2001";
+          "IFT-2001";
+          "GLO-2000";
+          "IFT-2006";
+          "GLO-2004";
+          "IFT-2007";
+          "GLO-2100";
+          "IFT-2008";
+          "GLO-2005";
+          "IFT-2004";
+          "GIN-3060";
+          "SIO-2110";
+          "GIF-3101";
+          "GLO-3100";
+          "GLO-3102";
+          "GLO-3202";
+          "GLO-4003";
+          "GLO-4008";
+          "GLO-4035";
+          "IFT-2002";
+          "IFT-2003";
+          "IFT-2101";
+          "IFT-2102";
+          "IFT-3000";
+          "IFT-3001";
+          "IFT-3002";
+          "IFT-3100";
+          "IFT-3101";
+          "IFT-3201";
+          "IFT-4100";
+          "MAT-1919";
+          "ANL-2020";
+        ],
+        {|cours_pgm b_iig|} );
+      (p1, [ "IFT-1003"; "STT-1000"; "GLO-2100"; "IFT-2008" ], {|cours_pgm p1|});
+      (p_mp, [ "IFT-1004"; "GIF-1003" ], {|cours_pgm p_mp|});
+      (p_vide, [], {|cours_pgm p_vide|});
     ],
     (* ---- Cas devant soulever une exception! ---- *)
     None )
@@ -426,6 +1065,14 @@ let jeu_cours_contrib_dans_pgm =
       ( ("IFT-1004", [ ("B-GLO", b_glo) ]),
         [ ("B-GLO", None) ],
         {|cours_contrib_dans_pgm "IFT-1004" ["B-GLO",b_glo]|} );
+      (* Ajoutés par rapport à version 1 du testeur *)
+      (("", []), [], {|cours_contrib_dans_pgm "" []|});
+      ( ("IFT-2008", [ ("p1", p1) ]),
+        [ ("p1", Some OB) ],
+        {|cours_contrib_dans_pgm "IFT-2008" [("p1", p1)]|} );
+      ( ("IFT-1004", [ ("p_vide", p_vide) ]),
+        [ ("p_vide", None) ],
+        {|cours_contrib_dans_pgm "IFT-1004" [("p_vide", p_vide)]|} );
     ],
     (* ---- Cas devant soulever une exception! ---- *)
     None )
@@ -454,6 +1101,39 @@ let jeu_regroupe_cours_equiv =
       ( [ "GLO-7003"; "GLO-1901"; "GLO-4010" ],
         [ [ "GLO-7003" ]; [ "GLO-1901" ]; [ "GLO-4010" ] ],
         {|regroupe_cours_equiv bcours ["GLO-7003"; "GLO-1901"; "GLO-4010"]|} );
+      (* Ajoutés par rapport à version 1 du testeur *)
+      ( [
+          "IFT-2001";
+          "GLO-2100";
+          "IFT-1006";
+          "GLO-2000";
+          "GIF-1003";
+          "IFT-1004";
+          "GLO-2001";
+          "IFT-2008";
+          "GLO-1901";
+          "IFT-2006";
+        ],
+        [
+          [ "GLO-2001"; "IFT-2001" ];
+          [ "GLO-2100"; "IFT-2008" ];
+          [ "GIF-1003"; "IFT-1006" ];
+          [ "GLO-2000"; "IFT-2006" ];
+          [ "GLO-1901"; "IFT-1004" ];
+        ],
+        {|regroupe_cours_equiv bcours [
+          "IFT-2001";
+          "GLO-2100";
+          "IFT-1006";
+          "GLO-2000";
+          "GIF-1003";
+          "IFT-1004";
+          "GLO-2001";
+          "IFT-2008";
+          "GLO-1901";
+          "IFT-2006";
+        ]|}
+      );
     ],
     (* ---- Cas devant soulever une exception! ---- *)
     Some

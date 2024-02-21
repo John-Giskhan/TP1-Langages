@@ -54,14 +54,14 @@ let simp_pre (pre : prealables) : prealables =
 
   List.iter (fun x -> Printf.printf "%s " x) prealables;
   print_newline();
-
-  let rec filter_pre pre lst = match pre with
+  Aucun
+  (* let rec filter_pre pre lst = match pre with
   | CP cours when (is_cours_in_list cours.titre lst) -> Aucun
   | CCP cours when (is_cours_in_list cours.titre lst) -> Aucun
   | OU pres -> OU (List.filter_map (fun p -> match filter_pre p lst with Aucun -> None | x -> Some x) pres)
   | ET pres -> ET (List.filter_map (fun p -> match filter_pre p lst with Aucun -> None | x -> Some x) pres)
   | _ -> Aucun in 
-  filter_pre pre prealables 
+  filter_pre pre prealables  *)
 
 (* -- À IMPLANTER/COMPLÉTER (10 PTS) ---------------------------------------- *)
 let seuls_cours_pgm_dans_pre (lncp : num_cours list) (pre : prealables) :
