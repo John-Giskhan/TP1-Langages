@@ -68,25 +68,11 @@ let seuls_cours_pgm_dans_pre (lncp : num_cours list) (pre : prealables) :
   raise (Non_Implante "seuls_cours_pgm_dans_pre non implanté")
 
 (* -- À IMPLANTER/COMPLÉTER (5 PTS) ----------------------------------------- *)
-let rec cours_dans_exigences (cours : num_cours list) = function
-  | [] -> cours
-  | CoursOB (_, liste_num_cours) :: t ->
-      cours_dans_exigences (cours @ liste_num_cours) t
-  | PlageCr (_, _, exigences_ext) :: t -> (
-      match exigences_ext with
-      | Cours liste_num_cours ->
-          cours_dans_exigences (cours @ liste_num_cours) t
-      | _ -> cours_dans_exigences cours t)
-
-let rec cours_dans_exigences_sans_doublons (cours : num_cours list) = function
-| [] -> cours
-| CoursOB (_, liste_num_cours) :: t ->
-  cours_dans_exigences_sans_doublons (cours ++ liste_num_cours) t
-| PlageCr (_, _, exigences_ext) :: t -> (
-    match exigences_ext with
-    | Cours liste_num_cours ->
-      cours_dans_exigences_sans_doublons (cours ++ liste_num_cours) t
-    | _ -> cours_dans_exigences_sans_doublons cours t)
+let rec cours_dans_liste_exigences (exigences : exigences list) (doublons : bool) : num_cours list =
+  match exigences with
+  | [] -> []
+  | h::t -> if doublons then extrait_lc h @ cours_dans_liste_exigences t doublons
+                        else extrait_lc h ++ cours_dans_liste_exigences t doublons
 
 let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
   let _, titre, _, cours_OB, cours_OP, cours_Conc = pgm in
@@ -97,13 +83,13 @@ let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
       let liste_exigences =
         List.map (fun (_, exigences) -> exigences) liste_titre_exigences
       in
-      cours_dans_exigences [] liste_exigences
+      cours_dans_liste_exigences liste_exigences false
   | OP ->
       let _, liste_titre_exigences = cours_OP in
       let liste_exigences =
         List.map (fun (_, exigences) -> exigences) liste_titre_exigences
       in
-      cours_dans_exigences [] liste_exigences
+      cours_dans_liste_exigences liste_exigences false
   | Conc ->
       let (liste_liste_exigences : exigences list list) =
         List.map (fun (_, (_, exigences_list)) -> exigences_list) cours_Conc
@@ -111,10 +97,8 @@ let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
       let (liste_exigences : exigences list) =
         List.fold_left ( ++ ) [] liste_liste_exigences
       in
-      let liste_cours = cours_dans_exigences [] liste_exigences in
-      List.iter (fun elem -> print_endline elem) liste_cours;
-      print_newline ();
-      liste_cours
+      cours_dans_liste_exigences liste_exigences true
+
 
 (* -- À IMPLANTER/COMPLÉTER (5 PTS) ----------------------------------------- *)
 let cours_pgm (pgm : programme) : num_cours list =
@@ -137,14 +121,28 @@ let cours_pgm (pgm : programme) : num_cours list =
   let (liste_exigences_Conc : exigences list) =
     List.fold_left ( ++ ) [] liste_liste_exigences
   in
-  cours_dans_exigences_sans_doublons [] (liste_exigences_OB ++ liste_exigences_OP ++ liste_exigences_Conc)
+  cours_dans_liste_exigences (liste_exigences_OB ++ liste_exigences_OP ++ liste_exigences_Conc) false
 
 
 
 (* -- À IMPLANTER/COMPLÉTER (15 PTS) ---------------------------------------- *)
 let cours_contrib_dans_pgm (nc : num_cours) (lpgms : (string * programme) list)
     : (string * type_cours option) list =
-  raise (Non_Implante "cours_contrib_dans_pgm non implanté")
+    List.map (fun (dept, programme) -> 
+      let cours_OB = cours_pgm_par_type programme OB in
+      let cours_OP = cours_pgm_par_type programme OP in
+      let cours_Conc = cours_pgm_par_type programme Conc in
+
+      let type_cours_option =
+        if List.exists (fun cours -> cours = nc) cours_OB then Some OB
+        else if List.exists (fun cours -> cours = nc) cours_OP then Some OP
+        else if List.exists (fun cours -> cours = nc) cours_Conc then Some Conc
+        else None
+      in
+      (dept, type_cours_option)
+    ) lpgms
+
+      
 
 (* -- À IMPLANTER/COMPLÉTER (25 PTS) ---------------------------------------- *)
 let regroupe_cours_equiv (lc : cours list) (lnc : num_cours list) :

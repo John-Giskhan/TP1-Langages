@@ -555,6 +555,7 @@ val verif_e : cours list -> exigences -> (int * int) * bool
       le total de crédits des cours présents dans la liste [l] vaut bien [n];
       il retourne le total de crédits calculé, suivi du même nombre, suivi
       d'une valeur booléenne résultat de la comparaison;
+      d'une valeur booléenne résultat de la comparaison;
     - pour une exigence de type [PlageCr(n1,n2,Cours l)], la fonction vérifie 
       que que la valeur [n2] est bien supérieure ou égale à [n1] et que le 
       total de crédits des cours présents dans la liste [l] est bien plus 
