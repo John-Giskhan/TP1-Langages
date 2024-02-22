@@ -145,6 +145,30 @@ let cours_contrib_dans_pgm (nc : num_cours) (lpgms : (string * programme) list)
       
 
 (* -- À IMPLANTER/COMPLÉTER (25 PTS) ---------------------------------------- *)
+let num_cours_dans_liste_cours (lc : cours list) (lnc : num_cours list):
+    bool = 
+    
+    let num_cours_lc = List.map (fun (num_cours_lc, _) -> num_cours_lc) lc in
+    List.for_all (fun elem -> respecte_motif elem "*-*" && List.mem elem num_cours_lc) lnc
+
 let regroupe_cours_equiv (lc : cours list) (lnc : num_cours list) :
+
     num_cours list list =
-  raise (Non_Implante "regroupe_cours_equiv non implanté")
+    if num_cours_dans_liste_cours lc lnc then (
+      let equiv = nc_eq lc in
+      let cours_equiv = List.fold_left (fun acc num_cours ->
+        let groupes_equiv, groupes_non_equiv = List.partition (fun groupe -> List.exists (equiv num_cours) groupe) acc in
+        match groupes_equiv with
+        | [] -> [num_cours] :: acc
+        | [x] -> (num_cours :: x) :: groupes_non_equiv
+        | _ -> failwith "Erreur, plusieurs groupes sont equivalents."
+      ) [] lnc in
+
+        let groupes_tries = List.map (List.sort Stdlib.compare) cours_equiv in
+        List.sort Stdlib.compare groupes_tries
+    )
+    else
+      failwith "un des cours présent dans [lnc] n'est 
+      pas défini dans [lc]"
+
+
