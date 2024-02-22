@@ -122,12 +122,10 @@ type programme =
   sessions d'admission *
   exigences au niveau des activités de formation 
     obligatoire, définies sous forme de liste de 
-    règles 
-    *
+    règles *
   exigences au niveau des activités de formation 
     à option, définies sous forme de liste de 
-    règles 
-    * liste de concentrations) *)
+    règles * liste de concentrations) *)
 
 and desc_pgm = type_pro * string * int * int
 (** la description d'un programme est la donnée d'un quadruplet *)

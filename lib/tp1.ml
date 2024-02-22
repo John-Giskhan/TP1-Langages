@@ -44,14 +44,14 @@ let is_cours_in_list cours lst = List.mem cours.titre lst
 let simp_pre (pre : prealables) : prealables =
   let prealables = lc_dans_pr pre in
   let str = pr2str pre in
-  print_string "before lc_dans_pr";
-  print_newline ();
-  print_string str;
-  print_newline ();
-  print_string "afteer lc_dans_pr";
-  print_newline ();
+  (* print_string "before lc_dans_pr";
+     print_newline ();
+     print_string str;
+     print_newline ();
+     print_string "afteer lc_dans_pr";
+     print_newline ();
 
-  List.iter (fun x -> Printf.printf "%s " x) prealables;
+     List.iter (fun x -> Printf.printf "%s " x) prealables; *)
   print_newline ();
   Aucun
 (* let rec filter_pre pre lst = match pre with
@@ -68,17 +68,18 @@ let seuls_cours_pgm_dans_pre (lncp : num_cours list) (pre : prealables) :
   raise (Non_Implante "seuls_cours_pgm_dans_pre non implanté")
 
 (* -- À IMPLANTER/COMPLÉTER (5 PTS) ----------------------------------------- *)
-let rec process_exigences (cours : num_cours list) = function
+let rec cours_dans_exigences (cours : num_cours list) = function
   | [] -> cours
-  | CoursOB (_, num_cours) :: t -> process_exigences (cours @ num_cours) t
+  | CoursOB (_, liste_num_cours) :: t ->
+      cours_dans_exigences (cours ++ liste_num_cours) t
   | PlageCr (_, _, exigences_ext) :: t -> (
       match exigences_ext with
-      | Cours num_cours_list -> process_exigences (cours @ num_cours_list) t
-      | CoursExclus num_cours_list ->
-          process_exigences (cours @ num_cours_list) t)
+      | Cours liste_num_cours ->
+          cours_dans_exigences (cours ++ liste_num_cours) t
+      | _ -> cours_dans_exigences cours t)
 
 let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
-  let _, _, _, cours_OB, cours_OP, cours_Conc = pgm in
+  let _, titre, _, cours_OB, cours_OP, cours_Conc = pgm in
 
   match tc with
   | OB ->
@@ -86,12 +87,22 @@ let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
       let liste_exigences =
         List.map (fun (_, exigences) -> exigences) liste_titre_exigences
       in
-      process_exigences [] liste_exigences
-  | _ -> []
-(*
-   | OP -> let (_, liste_exigences) in
+      cours_dans_exigences [] liste_exigences
+  | OP ->
+      let _, liste_titre_exigences = cours_OP in
+      let liste_exigences =
+        List.map (fun (_, exigences) -> exigences) liste_titre_exigences
+      in
+      cours_dans_exigences [] liste_exigences
+  | Conc ->
+      let (liste_liste_exigences : exigences list list) =
+        List.map (fun (_, (_ , exigences_list)) -> exigences_list) cours_Conc
+      in
+      let (liste_exigences : exigences list) =
+        List.fold_right (fun exigences_list acc -> acc ++ exigences_list) liste_liste_exigences []
+      in
+      cours_dans_exigences [] liste_exigences
 
-   | Conc -> let (_, nb_credits_et_exigences) in *)
 
 (* -- À IMPLANTER/COMPLÉTER (5 PTS) ----------------------------------------- *)
 let cours_pgm (pgm : programme) : num_cours list =
