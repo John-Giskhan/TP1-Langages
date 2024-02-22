@@ -71,11 +71,11 @@ let seuls_cours_pgm_dans_pre (lncp : num_cours list) (pre : prealables) :
 let rec cours_dans_exigences (cours : num_cours list) = function
   | [] -> cours
   | CoursOB (_, liste_num_cours) :: t ->
-      cours_dans_exigences (cours ++ liste_num_cours) t
+      cours_dans_exigences (cours @ liste_num_cours) t
   | PlageCr (_, _, exigences_ext) :: t -> (
       match exigences_ext with
       | Cours liste_num_cours ->
-          cours_dans_exigences (cours ++ liste_num_cours) t
+          cours_dans_exigences (cours @ liste_num_cours) t
       | _ -> cours_dans_exigences cours t)
 
 let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
@@ -101,7 +101,10 @@ let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
       let (liste_exigences : exigences list) =
         List.fold_left (++) [] liste_liste_exigences
       in
-      cours_dans_exigences [] liste_exigences
+      let liste_cours = cours_dans_exigences [] liste_exigences
+      in
+      List.iter (fun elem -> print_endline(elem)) liste_cours; print_newline(); 
+      liste_cours
 
 
 (* -- À IMPLANTER/COMPLÉTER (5 PTS) ----------------------------------------- *)
