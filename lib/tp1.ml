@@ -78,6 +78,16 @@ let rec cours_dans_exigences (cours : num_cours list) = function
           cours_dans_exigences (cours @ liste_num_cours) t
       | _ -> cours_dans_exigences cours t)
 
+let rec cours_dans_exigences_sans_doublons (cours : num_cours list) = function
+| [] -> cours
+| CoursOB (_, liste_num_cours) :: t ->
+  cours_dans_exigences_sans_doublons (cours ++ liste_num_cours) t
+| PlageCr (_, _, exigences_ext) :: t -> (
+    match exigences_ext with
+    | Cours liste_num_cours ->
+      cours_dans_exigences_sans_doublons (cours ++ liste_num_cours) t
+    | _ -> cours_dans_exigences_sans_doublons cours t)
+
 let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
   let _, titre, _, cours_OB, cours_OP, cours_Conc = pgm in
 
@@ -96,20 +106,40 @@ let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
       cours_dans_exigences [] liste_exigences
   | Conc ->
       let (liste_liste_exigences : exigences list list) =
-        List.map (fun (_, (_ , exigences_list)) -> exigences_list) cours_Conc
+        List.map (fun (_, (_, exigences_list)) -> exigences_list) cours_Conc
       in
       let (liste_exigences : exigences list) =
-        List.fold_left (++) [] liste_liste_exigences
+        List.fold_left ( ++ ) [] liste_liste_exigences
       in
-      let liste_cours = cours_dans_exigences [] liste_exigences
-      in
-      List.iter (fun elem -> print_endline(elem)) liste_cours; print_newline(); 
+      let liste_cours = cours_dans_exigences [] liste_exigences in
+      List.iter (fun elem -> print_endline elem) liste_cours;
+      print_newline ();
       liste_cours
-
 
 (* -- À IMPLANTER/COMPLÉTER (5 PTS) ----------------------------------------- *)
 let cours_pgm (pgm : programme) : num_cours list =
-  raise (Non_Implante "cours_pgm non implanté")
+  let _, titre, _, cours_OB, cours_OP, cours_Conc = pgm in
+
+  let _, liste_titre_exigences = cours_OB in
+  let liste_exigences_OB =
+    List.map (fun (_, exigences) -> exigences) liste_titre_exigences
+  in
+
+  let _, liste_titre_exigences = cours_OP in
+  let liste_exigences_OP =
+    List.map (fun (_, exigences) -> exigences) liste_titre_exigences
+  in
+
+  let (liste_liste_exigences : exigences list list) =
+    List.map (fun (_, (_, exigences_list)) -> exigences_list) cours_Conc
+  in
+
+  let (liste_exigences_Conc : exigences list) =
+    List.fold_left ( ++ ) [] liste_liste_exigences
+  in
+  cours_dans_exigences_sans_doublons [] (liste_exigences_OB ++ liste_exigences_OP ++ liste_exigences_Conc)
+
+
 
 (* -- À IMPLANTER/COMPLÉTER (15 PTS) ---------------------------------------- *)
 let cours_contrib_dans_pgm (nc : num_cours) (lpgms : (string * programme) list)
