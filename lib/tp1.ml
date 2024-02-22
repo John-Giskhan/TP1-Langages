@@ -99,7 +99,7 @@ let cours_pgm_par_type (pgm : programme) (tc : type_cours) : num_cours list =
         List.map (fun (_, (_ , exigences_list)) -> exigences_list) cours_Conc
       in
       let (liste_exigences : exigences list) =
-        List.fold_right (fun exigences_list acc -> acc ++ exigences_list) liste_liste_exigences []
+        List.fold_left (++) [] liste_liste_exigences
       in
       cours_dans_exigences [] liste_exigences
 
