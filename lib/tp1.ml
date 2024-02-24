@@ -193,8 +193,7 @@ let regroupe_cours_equiv (lc : cours list) (lnc : num_cours list) :
         [] lnc
     in
 
-    let groupes_tries = List.map (List.sort Stdlib.compare) cours_equiv in
-    List.sort Stdlib.compare groupes_tries
+    List.map (List.sort Stdlib.compare) cours_equiv
   else
     failwith
-      "un des cours présent dans [lnc] n'est \n      pas défini dans [lc]"
+      "un des cours présent dans [lnc] n'est pas défini dans [lc]"
