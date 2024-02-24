@@ -51,18 +51,24 @@ let applatir_OU_ET liste : prealables list =
 let enlever_doublons liste : prealables list = [] ++ liste
 let enlever_aucun liste : prealables list = List.filter (( <> ) Aucun) liste
 
-let rec simp_pre pre : prealables =
-  match pre with
-  | OU liste | ET liste -> (
-      let liste_simplifiee =
-        liste |> List.map simp_pre |> applatir_OU_ET |> enlever_doublons
-        |> enlever_aucun
-      in
-      match liste_simplifiee with
-      | [] -> Aucun
-      | [ x ] -> x
-      | _ -> ( match pre with OU _ -> OU liste_simplifiee | _ -> ET liste_simplifiee))
-  | _ -> pre
+let simp_pre pre : prealables =
+  let rec simplifier pre =
+    match pre with
+    | OU liste | ET liste -> (
+        let liste_simplifiee =
+          liste |> List.map simplifier |> applatir_OU_ET |> enlever_doublons
+          |> enlever_aucun
+        in
+        match liste_simplifiee with
+        | [] -> Aucun
+        | [ x ] -> x
+        | _ -> (
+            match pre with
+            | OU _ -> OU liste_simplifiee
+            | _ -> ET liste_simplifiee))
+    | _ -> pre
+  in
+  simplifier pre
 
 (* -- À IMPLANTER/COMPLÉTER (10 PTS) ---------------------------------------- *)
 let rec seuls_cours_pgm_dans_pre (lncp : num_cours list) (pre : prealables) :
