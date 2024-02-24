@@ -69,7 +69,7 @@ let simp_pre pre : prealables =
 let rec seuls_cours_pgm_dans_pre (lncp : num_cours list) (pre : prealables) :
     prealables =
   let pre_simplifie = simp_pre pre in
-  match pre_simplifie with
+  let cours = match pre_simplifie with
   | CP cours -> if List.mem cours lncp then pre_simplifie else Aucun
   | CCP cours -> if List.mem cours lncp then pre_simplifie else Aucun
   | CRE _ -> pre_simplifie
@@ -90,6 +90,9 @@ let rec seuls_cours_pgm_dans_pre (lncp : num_cours list) (pre : prealables) :
           | ET _ -> ET filtrer
           | _ -> assert false))
   | Aucun -> Aucun
+    in 
+    simp_pre cours
+
 
 (* -- À IMPLANTER/COMPLÉTER (5 PTS) ----------------------------------------- *)
 let rec cours_dans_liste_exigences (exigences : exigences list)
