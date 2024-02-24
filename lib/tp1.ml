@@ -51,17 +51,17 @@ let applatir_OU_ET liste : prealables list =
 let enlever_doublons liste : prealables list = [] ++ liste
 let enlever_aucun liste : prealables list = List.filter (( <> ) Aucun) liste
 
-let rec simp_pre pre =
+let rec simp_pre pre : prealables =
   match pre with
   | OU liste | ET liste -> (
-      let simplifier =
+      let liste_simplifiee =
         liste |> List.map simp_pre |> applatir_OU_ET |> enlever_doublons
         |> enlever_aucun
       in
-      match simplifier with
+      match liste_simplifiee with
       | [] -> Aucun
       | [ x ] -> x
-      | _ -> ( match pre with OU _ -> OU simplifier | _ -> ET simplifier))
+      | _ -> ( match pre with OU _ -> OU liste_simplifiee | _ -> ET liste_simplifiee))
   | _ -> pre
 
 (* -- À IMPLANTER/COMPLÉTER (10 PTS) ---------------------------------------- *)
@@ -192,8 +192,5 @@ let regroupe_cours_equiv (lc : cours list) (lnc : num_cours list) :
           | _ -> failwith "Erreur, plusieurs groupes sont equivalents.")
         [] lnc
     in
-
     List.map (List.sort Stdlib.compare) cours_equiv
-  else
-    failwith
-      "un des cours présent dans [lnc] n'est pas défini dans [lc]"
+  else failwith "un des cours présent dans [lnc] n'est pas défini dans [lc]"
