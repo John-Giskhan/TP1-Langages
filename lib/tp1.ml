@@ -41,32 +41,27 @@ let est_prerequis (lc : cours list) (nc1 : num_cours) (nc2 : num_cours) : int =
 (* -- À IMPLANTER/COMPLÉTER (30 PTS) ---------------------------------------- *)
 let cours_est_dans_liste cours liste = List.mem cours.titre liste
 
-(* Applatir OU et ET imbriques *)
-let applatir_OU_ET liste : prealables list =
-  List.fold_left
-    (fun acc pre ->
-      match pre with ET liste | OU liste -> acc @ liste | _ -> acc @ [ pre ])
-    [] liste
-
-let enlever_doublons liste : prealables list = [] ++ liste
-let enlever_aucun liste : prealables list = List.filter (( <> ) Aucun) liste
-
 let simp_pre pre : prealables =
   let rec simplifier pre =
     match pre with
+    | CP _ | CCP _ | CRE _ | Aucun -> pre
     | OU liste | ET liste -> (
-        let liste_simplifiee =
-          liste |> List.map simplifier |> applatir_OU_ET |> enlever_doublons
-          |> enlever_aucun
-        in
-        match liste_simplifiee with
+        liste |> List.map simplifier
+        |> List.concat_map
+             (match pre with
+             | ET _ -> ( function ET l -> l | x -> [ x ])
+             | OU _ -> ( function OU l -> l | x -> [ x ])
+             | _ -> fun x -> [ x ])
+        |> List.fold_left
+             (fun acc x ->
+               if List.mem x acc || x = Aucun then acc else x :: acc)
+             []
+        |> List.rev
+        |> fun nettoyage ->
+        match nettoyage with
         | [] -> Aucun
         | [ x ] -> x
-        | _ -> (
-            match pre with
-            | OU _ -> OU liste_simplifiee
-            | _ -> ET liste_simplifiee))
-    | _ -> pre
+        | liste -> ( match pre with OU _ -> OU liste | _ -> ET liste))
   in
   simplifier pre
 
