@@ -56,7 +56,6 @@ let simp_pre pre : prealables =
              (fun acc x ->
                if List.mem x acc || x = Aucun then acc else x :: acc)
              []
-        |> List.rev
         |> fun nettoyage ->
         match nettoyage with
         | [] -> Aucun
@@ -69,30 +68,30 @@ let simp_pre pre : prealables =
 let rec seuls_cours_pgm_dans_pre (lncp : num_cours list) (pre : prealables) :
     prealables =
   let pre_simplifie = simp_pre pre in
-  let cours = match pre_simplifie with
-  | CP cours -> if List.mem cours lncp then pre_simplifie else Aucun
-  | CCP cours -> if List.mem cours lncp then pre_simplifie else Aucun
-  | CRE _ -> pre_simplifie
-  | OU liste | ET liste -> (
-      let process_liste =
-        List.fold_right
-          (fun elem acc ->
-            let filtrer = seuls_cours_pgm_dans_pre lncp elem in
-            match filtrer with Aucun -> acc | _ -> filtrer :: acc)
-          liste []
-      in
-      match process_liste with
-      | [] -> Aucun
-      | [ x ] -> x
-      | _ as filtrer -> (
-          match pre_simplifie with
-          | OU _ -> OU filtrer
-          | ET _ -> ET filtrer
-          | _ -> assert false))
-  | Aucun -> Aucun
-    in 
-    simp_pre cours
-
+  let cours =
+    match pre_simplifie with
+    | CP cours -> if List.mem cours lncp then pre_simplifie else Aucun
+    | CCP cours -> if List.mem cours lncp then pre_simplifie else Aucun
+    | CRE _ -> pre_simplifie
+    | OU liste | ET liste -> (
+        let process_liste =
+          List.fold_right
+            (fun elem acc ->
+              let filtrer = seuls_cours_pgm_dans_pre lncp elem in
+              match filtrer with Aucun -> acc | _ -> filtrer :: acc)
+            liste []
+        in
+        match process_liste with
+        | [] -> Aucun
+        | [ x ] -> x
+        | _ as filtrer -> (
+            match pre_simplifie with
+            | OU _ -> OU filtrer
+            | ET _ -> ET filtrer
+            | _ -> assert false))
+    | Aucun -> Aucun
+  in
+  simp_pre cours
 
 (* -- À IMPLANTER/COMPLÉTER (5 PTS) ----------------------------------------- *)
 let rec cours_dans_liste_exigences (exigences : exigences list)
