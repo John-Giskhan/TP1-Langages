@@ -39,8 +39,6 @@ let est_prerequis (lc : cours list) (nc1 : num_cours) (nc2 : num_cours) : int =
     if List.exists (fun pre -> pre = nc1) prerequis_nc2 then -1 else 0
 
 (* -- À IMPLANTER/COMPLÉTER (30 PTS) ---------------------------------------- *)
-let cours_est_dans_liste cours liste = List.mem cours.titre liste
-
 let simp_pre pre : prealables =
   let rec simplifier pre =
     match pre with
